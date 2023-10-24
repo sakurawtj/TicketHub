@@ -26,6 +26,18 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true
     }
+}, {
+    toJSON: {
+        transform(doc, ret) {
+            // change _id to id so that db like MySQL/postgres can also use it
+            ret.id = ret._id
+            delete ret._id;
+            // don't want to show password in the json that return
+            delete ret.password;
+            delete ret.__v;
+        }
+    }
+    
 });
 
 userSchema.pre('save', async function(done) {
