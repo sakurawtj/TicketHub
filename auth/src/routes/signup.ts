@@ -1,7 +1,12 @@
 import express, {Request, Response} from 'express';
-import {body, validationResult} from 'express-validator';
-import { RequestValidationError } from '../errors/request-validation-error'
+import {body} from 'express-validator';
+import jwt from 'jsonwebtoken';
+
+import { User } from '../models/user';
 import { DatabaseConnectionError } from '../errors/database-connection-error'
+import { BadRequestError } from '../errors/bad-request-error';
+import { validateRequest } from '../middlewares/validate-request';
+
 const router = express.Router();
 
 router.post('/api/users/signup', [
@@ -13,15 +18,30 @@ router.post('/api/users/signup', [
             .isLength({min: 4, max:20})
             .withMessage('Password must be between 4 and 20 characters')
     ],
-    (req: Request, res: Response) => {
-        const errors = validationResult(req);
-        if(!errors.isEmpty()) {
-            throw new RequestValidationError(errors.array());
+    validateRequest,
+    async (req: Request, res: Response) => {
+        const {email, password} = req.body;
+        const existingUser = await User.findOne({email});
+        if(existingUser) {
+            throw new BadRequestError('Email in use');
         }
-        // const {email, password} = req.body;
-        console.log('Creating a user...');
-        throw new DatabaseConnectionError();
-        res.send({});
+        const user = User.build({email, password});
+        await user.save();
+
+        // generate JWT, 'asdf' is signing key
+        // use signing key to see if the token is valid
+        const userJwt = jwt.sign({
+            id: user.id,
+            email: user.email
+        }, process.env.JWT_KEY!);
+
+        // store it on cookie session object
+        req.session = {
+            jwt: userJwt
+        } 
+
+        res.status(201).send(user);
+        
 
 });
 
