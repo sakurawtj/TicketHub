@@ -1,3 +1,4 @@
+// in-memory copy of mongodb to test
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 import {app} from '../app';
