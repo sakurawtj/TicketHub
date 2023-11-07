@@ -16,5 +16,6 @@ export class PaymentCreatedListener extends Listener<PaymentCreatedEvent> {
             status: OrderStatus.Complete
         })
         await order.save();
+        msg.ack();
     }
 }
